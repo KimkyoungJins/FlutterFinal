@@ -1,35 +1,31 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 
 class Product {
-  String? id;
+  int? id;
   String name;
   double price;
-  String imageUrl;
+  String imagePath; // 로컬에 저장된 이미지의 경로
 
   Product({
     this.id,
     required this.name,
     required this.price,
-    required this.imageUrl,
+    required this.imagePath,
   });
 
-  // Firestore에서 데이터를 가져올 때 사용
-  factory Product.fromDocument(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return Product(
-      id: doc.id,
-      name: data['name'] ?? '',
-      price: (data['price'] ?? 0).toDouble(),
-      imageUrl: data['imageUrl'] ?? '',
-    );
-  }
+  // 데이터베이스에서 데이터를 가져올 때 사용
+  factory Product.fromMap(Map<String, dynamic> json) => Product(
+        id: json['id'],
+        name: json['name'],
+        price: json['price'],
+        imagePath: json['imagePath'],
+      );
 
-  // Firestore에 데이터를 저장할 때 사용
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'price': price,
-      'imageUrl': imageUrl,
-    };
-  }
+  // 데이터베이스에 데이터를 저장할 때 사용
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        'price': price,
+        'imagePath': imagePath,
+      };
 }

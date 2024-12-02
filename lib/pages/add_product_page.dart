@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../helpers/database_helper.dart';
 import '../models/product.dart';
-import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart';
 
 class AddProductPage extends StatefulWidget {
-  const AddProductPage({Key? key}) : super(key: key);
-
   @override
   _AddProductPageState createState() => _AddProductPageState();
 }
@@ -19,12 +17,12 @@ class _AddProductPageState extends State<AddProductPage> {
   String _name = '';
   double _price = 0.0;
   File? _imageFile;
-  bool _isUploading = false;
+  bool _isSaving = false;
 
   final ImagePicker _picker = ImagePicker();
 
-  // 기본 이미지 URL
-  String _defaultImageUrl = 'http://handong.edu/site/handong/res/img/logo.png';
+  // 기본 이미지 경로
+  String _defaultImagePath = 'assets/images/default_image.png';
 
   // 이미지 선택 함수
   Future<void> _pickImage() async {
@@ -38,15 +36,12 @@ class _AddProductPageState extends State<AddProductPage> {
     }
   }
 
-  // 이미지 업로드 함수
-  Future<String> _uploadImage(File file) async {
-    String fileName = path.basename(file.path);
-    Reference storageRef =
-        FirebaseStorage.instance.ref().child('products').child(fileName);
-    UploadTask uploadTask = storageRef.putFile(file);
-    TaskSnapshot snapshot = await uploadTask;
-    String downloadUrl = await snapshot.ref.getDownloadURL();
-    return downloadUrl;
+  // 이미지 저장 함수
+  Future<String> _saveImage(File file) async {
+    Directory appDir = await getApplicationDocumentsDirectory();
+    String fileName = basename(file.path);
+    String savedPath = join(appDir.path, fileName);
+    return await file.copy(savedPath).then((File savedFile) => savedFile.path);
   }
 
   // 상품 추가 함수
@@ -56,26 +51,25 @@ class _AddProductPageState extends State<AddProductPage> {
     _formKey.currentState!.save();
 
     setState(() {
-      _isUploading = true;
+      _isSaving = true;
     });
 
     try {
-      String imageUrl;
+      String imagePath;
       if (_imageFile != null) {
-        imageUrl = await _uploadImage(_imageFile!);
+        imagePath = await _saveImage(_imageFile!);
       } else {
-        imageUrl = _defaultImageUrl;
+        // 기본 이미지 사용
+        imagePath = '';
       }
 
       Product newProduct = Product(
         name: _name,
         price: _price,
-        imageUrl: imageUrl,
+        imagePath: imagePath,
       );
 
-      await FirebaseFirestore.instance
-          .collection('products')
-          .add(newProduct.toMap());
+      await DatabaseHelper.instance.insertProduct(newProduct);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('상품이 성공적으로 추가되었습니다!')),
@@ -88,7 +82,7 @@ class _AddProductPageState extends State<AddProductPage> {
       );
     } finally {
       setState(() {
-        _isUploading = false;
+        _isSaving = false;
       });
     }
   }
@@ -101,7 +95,7 @@ class _AddProductPageState extends State<AddProductPage> {
         ),
         body: SingleChildScrollView(
           padding: EdgeInsets.all(16.0),
-          child: _isUploading
+          child: _isSaving
               ? Center(child: CircularProgressIndicator())
               : Form(
                   key: _formKey,
@@ -114,8 +108,7 @@ class _AddProductPageState extends State<AddProductPage> {
                           radius: 60,
                           backgroundImage: _imageFile != null
                               ? FileImage(_imageFile!)
-                              : NetworkImage(_defaultImageUrl)
-                                  as ImageProvider,
+                              : AssetImage(_defaultImagePath) as ImageProvider,
                         ),
                       ),
                       SizedBox(height: 10),
