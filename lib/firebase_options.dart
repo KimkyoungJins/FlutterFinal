@@ -4,16 +4,6 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-/// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -64,6 +54,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '278776980111',
     projectId: 'final2-7bda5',
     storageBucket: 'final2-7bda5.firebasestorage.app',
+    iosClientId: '278776980111-6tn1q8jnu7mns7btilou4or140iamgmp.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication1',
   );
 
@@ -73,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '278776980111',
     projectId: 'final2-7bda5',
     storageBucket: 'final2-7bda5.firebasestorage.app',
+    iosClientId: '278776980111-6tn1q8jnu7mns7btilou4or140iamgmp.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication1',
   );
 
@@ -85,4 +77,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'final2-7bda5.firebasestorage.app',
     measurementId: 'G-E34N6WH0V1',
   );
+
 }
