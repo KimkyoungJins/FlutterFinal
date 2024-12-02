@@ -1,104 +1,67 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../models/product.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart';
 import '../data/product_data.dart';
 
-class AddProductPage extends StatefulWidget {
+class EditProductPage extends StatefulWidget {
+  final Product product;
+
+  const EditProductPage({Key? key, required this.product}) : super(key: key);
+
   @override
-  _AddProductPageState createState() => _AddProductPageState();
+  _EditProductPageState createState() => _EditProductPageState();
 }
 
-class _AddProductPageState extends State<AddProductPage> {
+class _EditProductPageState extends State<EditProductPage> {
   final _formKey = GlobalKey<FormState>();
 
-  String _name = '';
-  double _price = 0.0;
-  String _description = '';
-  File? _imageFile;
-  bool _isSaving = false;
+  late String _name;
+  late double _price;
+  late String _description;
+  bool _isUpdating = false;
 
-  final ImagePicker _picker = ImagePicker();
-
-  // 기본 이미지 경로
-  String _defaultImagePath = 'assets/images/default_image.png';
-
-  // 이미지 선택 함수
-  Future<void> _pickImage() async {
-    final pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    _name = widget.product.name;
+    _price = widget.product.price;
+    _description = widget.product.description;
   }
 
-  // 이미지 저장 함수
-  Future<String> _saveImage(File file) async {
-    Directory appDir = await getApplicationDocumentsDirectory();
-    String fileName = basename(file.path);
-    String savedPath = join(appDir.path, fileName);
-    return await file.copy(savedPath).then((File savedFile) => savedFile.path);
-  }
-
-  // 상품 추가 함수
-  Future<void> _addProduct() async {
+  void _updateProduct() {
     if (!_formKey.currentState!.validate()) return;
 
     _formKey.currentState!.save();
 
     setState(() {
-      _isSaving = true;
+      _isUpdating = true;
     });
 
     try {
-      String imagePath;
-      if (_imageFile != null) {
-        imagePath = await _saveImage(_imageFile!);
-      } else {
-        // 기본 이미지 사용
-        imagePath = '';
-      }
-
-      Product newProduct = Product(
-        id: ProductData.getNextId(),
+      Product updatedProduct = Product(
+        id: widget.product.id,
         name: _name,
         price: _price,
-        imagePath: imagePath,
+        imagePath: widget.product.imagePath,
         description: _description,
+        likeCount: widget.product.likeCount,
+        isLiked: widget.product.isLiked,
       );
 
-      ProductData.addProduct(newProduct);
+      ProductData.updateProduct(updatedProduct);
 
-      // context를 사용하는 부분을 주석 처리하거나 삭제합니다.
-      // if (mounted) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     SnackBar(content: Text('상품이 성공적으로 추가되었습니다!')),
-      //   );
-      //   Navigator.pop(context);
-      // }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('상품이 성공적으로 수정되었습니다!')),
+      );
 
-      // 대신 Navigator를 사용하여 이전 화면으로 돌아갑니다.
-      if (mounted) {
-        Navigator.of(this.context).pop();
-      }
+      Navigator.pop(context);
     } catch (e) {
-      // 에러 처리 부분에서도 context를 사용하는 부분을 주석 처리하거나 삭제합니다.
-      // if (mounted) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     SnackBar(content: Text('상품 추가 중 에러가 발생했습니다: $e')),
-      //   );
-      // }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('상품 수정 중 에러가 발생했습니다: $e')),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
+      setState(() {
+        _isUpdating = false;
+      });
     }
   }
 
@@ -106,35 +69,19 @@ class _AddProductPageState extends State<AddProductPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('상품 추가'),
+          title: Text('상품 수정'),
         ),
         body: SingleChildScrollView(
           padding: EdgeInsets.all(16.0),
-          child: _isSaving
+          child: _isUpdating
               ? Center(child: CircularProgressIndicator())
               : Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      // 이미지 표시 및 선택 버튼
-                      GestureDetector(
-                        onTap: _pickImage,
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundImage: _imageFile != null
-                              ? FileImage(_imageFile!)
-                              : AssetImage(_defaultImagePath) as ImageProvider,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      TextButton.icon(
-                        onPressed: _pickImage,
-                        icon: Icon(Icons.photo),
-                        label: Text('이미지 선택'),
-                      ),
-                      SizedBox(height: 20),
                       // 상품 이름 입력
                       TextFormField(
+                        initialValue: _name,
                         decoration: InputDecoration(
                           labelText: '상품 이름',
                           border: OutlineInputBorder(),
@@ -152,6 +99,7 @@ class _AddProductPageState extends State<AddProductPage> {
                       SizedBox(height: 20),
                       // 상품 가격 입력
                       TextFormField(
+                        initialValue: _price.toString(),
                         decoration: InputDecoration(
                           labelText: '가격',
                           border: OutlineInputBorder(),
@@ -174,6 +122,7 @@ class _AddProductPageState extends State<AddProductPage> {
                       SizedBox(height: 20),
                       // 상품 설명 입력
                       TextFormField(
+                        initialValue: _description,
                         decoration: InputDecoration(
                           labelText: '상품 설명',
                           border: OutlineInputBorder(),
@@ -190,10 +139,10 @@ class _AddProductPageState extends State<AddProductPage> {
                         },
                       ),
                       SizedBox(height: 30),
-                      // 상품 추가 버튼
+                      // 상품 수정 버튼
                       ElevatedButton(
-                        onPressed: _addProduct,
-                        child: Text('상품 추가'),
+                        onPressed: _updateProduct,
+                        child: Text('상품 수정'),
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(double.infinity, 50),
                         ),

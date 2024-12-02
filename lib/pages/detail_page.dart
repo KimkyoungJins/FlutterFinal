@@ -1,7 +1,8 @@
+import 'dart:io'; // 추가해야 합니다.
 import 'package:flutter/material.dart';
-import '../helpers/database_helper.dart';
 import '../models/product.dart';
-import 'dart:io';
+import '../data/product_data.dart';
+import 'edit_product_page.dart';
 
 class DetailPage extends StatefulWidget {
   final int productId;
@@ -14,7 +15,39 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   Product? _product;
-  bool _isLoading = true;
+
+  void _loadProduct() {
+    setState(() {
+      _product = ProductData.getProductById(widget.productId);
+    });
+  }
+
+  void _toggleLike() {
+    if (_product == null) return;
+
+    if (_product!.isLiked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이미 좋아요를 눌렀습니다.')),
+      );
+    } else {
+      setState(() {
+        _product!.isLiked = true;
+        _product!.likeCount += 1;
+      });
+      ProductData.updateProduct(_product!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('좋아요를 눌렀습니다!')),
+      );
+    }
+  }
+
+  void _deleteProduct() {
+    ProductData.deleteProduct(widget.productId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('상품이 삭제되었습니다.')),
+    );
+    Navigator.pop(context);
+  }
 
   @override
   void initState() {
@@ -22,27 +55,38 @@ class _DetailPageState extends State<DetailPage> {
     _loadProduct();
   }
 
-  Future<void> _loadProduct() async {
-    Product? product = await DatabaseHelper.instance.getProduct(widget.productId);
-    setState(() {
-      _product = product;
-      _isLoading = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || _product == null) {
+    if (_product == null) {
       return Scaffold(
         appBar: AppBar(
           title: Text('상세 정보'),
         ),
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: Text('상품을 찾을 수 없습니다.')),
       );
     } else {
       return Scaffold(
         appBar: AppBar(
           title: Text(_product!.name),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.create),
+              onPressed: () async {
+                // 상품 수정 페이지로 이동
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProductPage(product: _product!),
+                  ),
+                );
+                _loadProduct();
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: _deleteProduct,
+            ),
+          ],
         ),
         body: Padding(
           padding: EdgeInsets.all(16.0),
@@ -73,11 +117,24 @@ class _DetailPageState extends State<DetailPage> {
                 style: TextStyle(fontSize: 20, color: Colors.grey[700]),
               ),
               SizedBox(height: 20),
-              // 추가적인 상품 설명이나 정보
+              // 상품 설명
               Text(
-                '이곳에 상품에 대한 추가 설명을 입력하세요.',
+                _product!.description,
                 style: TextStyle(fontSize: 16),
               ),
+              SizedBox(height: 20),
+              // 좋아요 버튼
+              ElevatedButton.icon(
+                onPressed: _toggleLike,
+                icon: Icon(Icons.thumb_up),
+                label: Text('좋아요'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _product!.isLiked ? Colors.grey : Colors.blue, // 수정된 부분
+                ),
+              ),
+              SizedBox(height: 10),
+              // 좋아요 수
+              Text('좋아요 수: ${_product!.likeCount}'),
             ],
           ),
         ),
