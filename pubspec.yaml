@@ -1,25 +1,26 @@
 name: flutter_application_1
-description: "A new Flutter project."
+description: A new Flutter project.
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.5.3 <4.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^2.8.0
-  firebase_auth: ^4.4.0
-  google_sign_in: ^5.4.0
-  cupertino_icons: ^1.0.8
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.3
+  google_sign_in: ^6.2.2
+  js: ^0.7.1
+  cupertino_icons: ^1.0.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^2.0.0
 
 flutter:
   uses-material-design: true
